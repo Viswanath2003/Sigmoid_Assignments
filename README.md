@@ -1,1 +1,0 @@
-# Sigmoid_Assignments
