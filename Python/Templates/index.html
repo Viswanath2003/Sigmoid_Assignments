@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>{{ bucket_name }}</h3>
+    <div class="d-flex">
+        <!-- Create Folder -->
+        <form action="{{ url_for('create_folder', bucket_name=bucket_name, prefix=prefix) }}" method="post" class="d-flex">
+            <input type="text" name="folder_name" class="form-control me-2" placeholder="Enter folder name" required>
+            <button type="submit" class="btn btn-primary">Create Folder</button>
+        </form>
+
+        <!-- Upload -->
+        <button class="btn btn-success ms-2" data-bs-toggle="modal" data-bs-target="#uploadModal">+ Upload</button>
+
+        <!-- Copy or Move -->
+        <form id="pasteForm" method="POST" action="{{ url_for('copy_file_here', bucket_name=bucket_name, prefix=prefix) }}">
+            <button type="submit" class="btn btn-warning ms-2">📋 Copy/Move Here</button>
+        </form>
+    </div>
+</div>
+
+<div class="mb-3">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('view_bucket', bucket_name=bucket_name, prefix='') }}">{{ bucket_name }}</a>
+            </li>
+            {% for crumb in breadcrumb %}
+                {% if not loop.last %}
+                    <li class="breadcrumb-item">
+                        <a href="{{ url_for('view_bucket', bucket_name=bucket_name, prefix=crumb.path) }}">
+                            {{ crumb.name }}
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="breadcrumb-item active" aria-current="page">{{ crumb.name }}</li>
+                {% endif %}
+            {% endfor %}
+        </ol>
+    </nav>
+</div>
+
+<table class="table table-bordered table-hover">
+    <thead class="table-light">
+        <tr>
+            <th>Object Name</th>
+            <th>Size (KB)</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Folders -->
+        {% for folder in folders %}
+        <tr>
+            <td>
+                {% set folder_name = folder.Prefix[prefix|length:] %}
+                <a href="{{ url_for('view_bucket', bucket_name=bucket_name, prefix=folder.Prefix) }}">
+                    📁 {{ folder_name }}
+                </a>
+            </td>
+            <td></td>
+            <td class="text-center">
+                <button class="" data-bs-toggle="modal" data-bs-target="#deleteFolderModal{{ loop.index }}">🗑</button>
+
+                <!-- Delete Folder Modal -->
+                <div class="modal fade" id="deleteFolderModal{{ loop.index }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <form class="modal-content" action="{{ url_for('delete_folder', bucket_name=bucket_name, folder_key=folder.Prefix) }}" method="post">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Confirm Delete Folder</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                Are you sure you want to delete folder <strong>{{ folder_name }}</strong> and all its contents?
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-danger">Delete</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+
+        <!-- Files -->
+        {% for obj in objects %}
+        <tr>
+            <td>{{ obj.Key }}</td>
+            <td>{{ (obj.Size / 1024)|round(2) }}</td>
+            <td class="text-center">
+                <!-- Delete -->
+                <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ loop.index }}">🗑</button>
+
+                <div class="modal fade" id="deleteModal{{ loop.index }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <form class="modal-content" action="{{ url_for('delete_file', bucket_name=bucket_name, key=obj.Key) }}" method="post">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Confirm Delete</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                Are you sure you want to delete <strong>{{ obj.Key.split('/')[-1] }}</strong>?
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-danger">Delete</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Download -->
+                <a class="btn btn-sm btn-primary" href="{{ url_for('download_file', bucket_name=bucket_name, key=obj.Key) }}">⬇️</a>
+
+                <!-- Move -->
+                <a href="{{ url_for('set_action', action='move', bucket_name=bucket_name, key=obj.Key) }}"
+                   class="btn btn-warning btn-sm" title="Move">✂️</a>
+
+                <!-- Copy -->
+                <a href="{{ url_for('set_action', action='copy', bucket_name=bucket_name, key=obj.Key) }}"
+                   class="btn btn-warning btn-sm" title="Copy">📄</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Upload Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form class="modal-content" action="{{ url_for('upload_file', bucket_name=bucket_name, prefix=prefix) }}" method="post" enctype="multipart/form-data">
+      <div class="modal-header">
+        <h5 class="modal-title">Upload File</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="file" class="form-control" name="file" required>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">Upload</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
