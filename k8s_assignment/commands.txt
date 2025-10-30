@@ -1,0 +1,21 @@
+docker run -it --rm \
+  -v "$PWD":/usr/src/app \
+  -w /usr/src/app \
+  maven:3.5-jdk-8 mvn clean package
+
+docker build -t java-webapp:latest .
+
+docker images
+
+docker run -d -p 8080:8080 --name java-webapp java-webapp:latest
+
+minikube start
+
+eval $(minikube docker-env)
+
+docker build -t java-webapp:latest .
+
+kubectl apply -f deployment.yaml
+kubectl apply -f service.yaml
+minikube ip
+
