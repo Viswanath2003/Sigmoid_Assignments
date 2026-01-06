@@ -8,12 +8,6 @@ pipeline {
 
     stages {
 
-        stage('Checkout Code') {
-            steps {
-                git 'https://github.com/Viswanath2003/Sigmoid_Assignments.git'
-            }
-        }
-
         stage('Terraform Init') {
             steps {
                 dir('terraform-project') {
