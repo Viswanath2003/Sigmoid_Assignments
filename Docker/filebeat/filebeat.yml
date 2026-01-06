@@ -1,0 +1,17 @@
+filebeat.inputs:
+- type: log
+  enabled: true
+  paths:
+    - /var/log/nginx/*.log
+
+setup.kibana:
+  host: "http://kibana:5601"
+  username: "elastic"
+  password: "passworddocker"
+
+output.elasticsearch:
+  hosts: ["http://elasticsearch:9200"]
+
+
+setup.template.settings:
+  index.number_of_shards: 1
